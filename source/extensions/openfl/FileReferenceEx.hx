@@ -100,6 +100,7 @@ class FileReferenceEx extends FileReference
 		#if desktop
 		var filter:String = null;
 		
+		#if !mac
 		if (browseOptions.typeFilter != null)
 		{
 			var filters:Array<String> = [];
@@ -111,6 +112,7 @@ class FileReferenceEx extends FileReference
 			
 			filter = filters.join(";");
 		}
+		#end
 		
 		#if (lime && !macro)
 		var openFileDialog = new lime.ui.FileDialog();
