@@ -456,7 +456,6 @@ class PlayState extends MusicBeatState
 	public var beatsPerZoom:Int = 4;
 	
 	var totalBeat:Int = 0;
-	var totalShake:Int = 0;
 	var timeBeat:Float = 1;
 	var gameZ:Float = 0.015;
 	var hudZ:Float = 0.03;
@@ -1725,29 +1724,7 @@ class PlayState extends MusicBeatState
 	function eventPushed(event:EventNote):Void
 	{
 		switch (event.event)
-		{
-			case 'Mult SV' | 'Constant SV':
-				var speed:Float = 1;
-				if (event.event == 'Constant SV')
-				{
-					var b = Std.parseFloat(event.value1);
-					speed = Math.isNaN(b) ? songSpeed : (songSpeed / b);
-				}
-				else
-				{
-					speed = Std.parseFloat(event.value1);
-					if (Math.isNaN(speed)) speed = 1;
-				}
-				
-				speedChanges.sort(SortUtil.svSort);
-				speedChanges.push(
-					{
-						position: getNoteInitialTime(event.strumTime),
-						songTime: event.strumTime,
-						startTime: event.strumTime,
-						speed: speed
-					});
-					
+		{			
 			case 'Change Character':
 				var charType:Int = 0;
 				switch (event.value1.toLowerCase())
@@ -2446,40 +2423,6 @@ class PlayState extends MusicBeatState
 					FlxG.camera.zoom += camZoom;
 					camHUD.zoom += hudZoom;
 				}
-				
-			case 'Camera Zoom':
-				FlxTween.cancelTweensOf(FlxG.camera, ['zoom']);
-				
-				var val1:Float = Std.parseFloat(value1);
-				if (Math.isNaN(val1)) val1 = 1;
-				
-				var targetZoom = defaultCamZoom * val1;
-				if (value2 != '')
-				{
-					var split = value2.split(',');
-					var duration:Float = 0;
-					var leEase:String = 'linear';
-					if (split[0] != null) duration = Std.parseFloat(split[0].trim());
-					if (split[1] != null) leEase = split[1].trim();
-					if (Math.isNaN(duration)) duration = 0;
-					
-					if (duration > 0) FlxTween.tween(FlxG.camera, {zoom: targetZoom}, duration, {ease: FlxEase.circOut});
-					else FlxG.camera.zoom = targetZoom;
-				}
-				defaultCamZoom = targetZoom;
-				scripts.set('defaultCamZoom', defaultCamZoom);
-				
-			case 'HUD Fade':
-				FlxTween.cancelTweensOf(camHUD, ['alpha']);
-				
-				var leAlpha:Float = Std.parseFloat(value1);
-				if (Math.isNaN(leAlpha)) leAlpha = 1;
-				
-				var duration:Float = Std.parseFloat(value2);
-				if (Math.isNaN(duration)) duration = 1;
-				
-				if (duration > 0) FlxTween.tween(camHUD, {alpha: leAlpha}, duration);
-				else camHUD.alpha = leAlpha;
 			case 'Play Animation':
 				var char:Character = dad;
 				switch (value2.toLowerCase().trim())
@@ -2636,69 +2579,26 @@ class PlayState extends MusicBeatState
 							}
 						});
 				}
-				
-			case 'Camera Zoom Chain':
-				var split1:Array<String> = value1.split(',');
-				var gameZoom:Float = Std.parseFloat(split1[0].trim());
-				var hudZoom:Float = Std.parseFloat(split1[1].trim());
-				
-				if (!Math.isNaN(gameZoom)) gameZ = 0.015;
-				if (!Math.isNaN(hudZoom)) hudZ = 0.03;
-				
-				if (split1.length == 4)
-				{
-					var shGame:Float = Std.parseFloat(split1[2].trim());
-					var shHUD:Float = Std.parseFloat(split1[3].trim());
-					
-					if (!Math.isNaN(shGame)) gameShake = shGame;
-					if (!Math.isNaN(shHUD)) hudShake = shHUD;
-					shakeTime = true;
-				}
-				else shakeTime = false;
-				
-				var split2:Array<String> = value2.split(',');
-				var toBeat:Int = Std.parseInt(split2[0].trim());
-				var tiBeat:Float = Std.parseFloat(split2[1].trim());
-				
-				if (Math.isNaN(toBeat)) toBeat = 4;
-				if (Math.isNaN(tiBeat)) tiBeat = 1;
-				
-				totalBeat = toBeat;
-				timeBeat = tiBeat;
-				
-			case 'Screen Shake Chain':
-				var split1:Array<String> = value1.split(',');
-				var gmShake:Float = Std.parseFloat(split1[0].trim());
-				var hdShake:Float = Std.parseFloat(split1[1].trim());
-				
-				if (!Math.isNaN(gmShake)) gameShake = gmShake;
-				if (!Math.isNaN(hdShake)) hudShake = hdShake;
-				
-				var toBeat:Int = Std.parseInt(value2);
-				if (!Math.isNaN(toBeat)) totalShake = 4;
-				
-				totalShake = toBeat;
-				
+			case 'Flash Camera':
+				var clr = FlxColor.WHITE;
+				if (value2 != "")
+					clr = FlxColor.fromString(value2);
+				FlxG.camera.flash(FlxColor.fromString(value2), Std.parseFloat(value1), null, true);
 			case 'Set Cam Zoom':
-				defaultCamZoom = Std.parseFloat(value1);
-				
-			case 'Set Cam Pos':
-				var split:Array<String> = value1.split(',');
-				var xPos:Float = Std.parseFloat(split[0].trim());
-				var yPos:Float = Std.parseFloat(split[1].trim());
-				if (Math.isNaN(xPos)) xPos = 0;
-				if (Math.isNaN(yPos)) yPos = 0;
-				switch (value2)
+				FlxTween.cancelTweensOf(FlxG.camera, ['zoom']);
+				if (!Math.isNaN(Std.parseFloat(value2)))
 				{
-					case 'bf' | 'boyfriend':
-						boyfriendCameraOffset[0] = xPos;
-						boyfriendCameraOffset[1] = yPos;
-					case 'gf' | 'girlfriend':
-						girlfriendCameraOffset[0] = xPos;
-						girlfriendCameraOffset[1] = yPos;
-					case 'dad' | 'opponent':
-						opponentCameraOffset[0] = xPos;
-						opponentCameraOffset[1] = yPos;
+					FlxTween.tween(FlxG.camera, {zoom: Std.parseFloat(value1)}, Std.parseFloat(value2),
+					{
+						ease: FlxEase.sineInOut,
+						onComplete: function(twn:FlxTween) {
+							defaultCamZoom = Std.parseFloat(value1);
+						}
+					});
+				}
+				else
+				{
+					defaultCamZoom = Std.parseFloat(value1);
 				}
 				
 			case 'Set Property':
